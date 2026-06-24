@@ -1,5 +1,6 @@
 import { extractPackageSize, parseUnitPrice, scoreOffer } from "../product-matching";
 import type { ProductOffer } from "../types";
+import { parseStructuredOffers } from "./structured-parsers";
 
 type ParseInput = {
   html: string;
@@ -10,6 +11,9 @@ type ParseInput = {
 };
 
 export function parseOffersFromHtml(input: ParseInput): ProductOffer[] {
+  const structuredOffers = parseStructuredOffers(input);
+  if (structuredOffers.length > 0) return dedupeOffers(structuredOffers);
+
   const jsonLdOffers = parseJsonLdOffers(input);
   if (jsonLdOffers.length > 0) return dedupeOffers(jsonLdOffers);
   return dedupeOffers(parsePriceFragments(input));

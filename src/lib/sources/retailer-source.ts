@@ -55,7 +55,7 @@ export function createRetailerSource(config: RetailerSourceConfig): GrocerySourc
       return {
         offers,
         status: offers.length > 0 ? "ok" : "empty",
-        message: offers.length > 0 ? `Found ${offers.length} visible result(s).` : "No visible matching prices found in public page content."
+        message: offers.length > 0 ? `Found ${offers.length} public result(s).` : "No matching prices found in public page content."
       };
     }
   };
