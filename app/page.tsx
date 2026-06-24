@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Clock, ExternalLink, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { ProductOffer, SearchResponse, SourceReport } from "@/src/lib/types";
 import { MAX_QUERY_LENGTH } from "@/src/lib/validation";
@@ -9,7 +9,6 @@ type FilterMode = "all" | "in_stock" | "exact";
 
 export default function Home() {
   const [query, setQuery] = useState("Meiji Low Fat Milk");
-  const [postalCode, setPostalCode] = useState("");
   const [filter, setFilter] = useState<FilterMode>("all");
   const [result, setResult] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,15 +31,10 @@ export default function Home() {
       return;
     }
 
-    if (!/^\d{6}$/.test(postalCode.trim())) {
-      setError("Enter a valid 6-digit Singapore postal code.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ q: normalizedQuery, postalCode });
+      const params = new URLSearchParams({ q: normalizedQuery });
       const response = await fetch(`/api/search?${params.toString()}`);
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Search failed.");
@@ -83,22 +77,6 @@ export default function Home() {
               />
             </div>
 
-            <label className="mt-4 block text-sm font-medium text-ink" htmlFor="postalCode">
-              Singapore postal code
-            </label>
-            <div className="mt-2 flex items-center gap-2 rounded-md border border-ink/15 bg-white px-3">
-              <MapPin aria-hidden="true" className="h-5 w-5 text-leaf" />
-              <input
-                id="postalCode"
-                inputMode="numeric"
-                maxLength={6}
-                className="min-h-12 w-full border-0 bg-transparent text-base outline-none"
-                value={postalCode}
-                onChange={(event) => setPostalCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="238859"
-              />
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -117,7 +95,7 @@ export default function Home() {
           <div>
             <h2 className="text-2xl font-semibold text-ink">Results</h2>
             <p className="mt-1 text-sm text-ink/65">
-              {result ? `${filteredOffers.length} offer(s) shown for "${result.query}" near ${result.postalCode}.` : "Run a search to compare live retailer pages."}
+              {result ? `${filteredOffers.length} offer(s) shown for "${result.query}".` : "Run a search to compare live retailer pages."}
             </p>
           </div>
 

@@ -29,7 +29,6 @@ export type SourceReport = {
 
 export type SearchResponse = {
   query: string;
-  postalCode: string;
   searchedAt: string;
   offers: ProductOffer[];
   sources: SourceReport[];
@@ -37,7 +36,6 @@ export type SearchResponse = {
 
 export type SourceSearchInput = {
   query: string;
-  postalCode: string;
   signal: AbortSignal;
 };
 

@@ -21,7 +21,6 @@ describe("retailer source", () => {
 
     const result = await source.search({
       query: "Meiji Low Fat Milk",
-      postalCode: "238859",
       signal: new AbortController().signal
     });
 

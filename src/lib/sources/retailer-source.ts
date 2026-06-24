@@ -5,7 +5,7 @@ type RetailerSourceConfig = {
   id: string;
   name: string;
   baseUrl: string;
-  searchUrl: (query: string, postalCode: string) => string;
+  searchUrl: (query: string) => string;
   unsupported?: string;
 };
 
@@ -25,7 +25,7 @@ export function createRetailerSource(config: RetailerSourceConfig): GrocerySourc
         };
       }
 
-      const url = config.searchUrl(input.query, input.postalCode);
+      const url = config.searchUrl(input.query);
       const response = await fetch(url, {
         signal: input.signal,
         headers: {
