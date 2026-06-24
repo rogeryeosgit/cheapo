@@ -6,7 +6,8 @@ The adapter layer is intentionally conservative. It fetches public search pages,
 
 - FairPrice: parse the server-rendered `__NEXT_DATA__` product collection and normalize stock, image, package size, product URL, and single-item promo price when exposed.
 - Cold Storage: parse the server-rendered `initialProducts` payload and normalize promo price, discount label, stock, image, and product URL.
-- RedMart/Lazada and Sheng Siong: keep as public-page sources, but report empty/degraded states when product data is not reliably exposed.
+- RedMart: use Lazada's public `ajax=true` search response and keep results scoped to `sellerName: "RedMart"`.
+- Sheng Siong: use the public Meteor DDP app method that returns product search data, with the same source timeout and error isolation as other adapters.
 - Amazon Fresh: report unsupported until an approved feed or integration is available.
 
 The structured parsers are preferred because they avoid false matches from navigation text, filters, ratings, and promotional copy.
@@ -50,3 +51,5 @@ Each offer should include:
 Live retailer pages can change without notice. Keep adapter tests fixture-based and treat source failures as normal runtime states, not application failures.
 
 When a source changes shape, prefer adding or repairing a structured parser fixture before relaxing the generic text parser. Loose parsing can make results look complete while returning the wrong price.
+
+RedMart and Sheng Siong currently depend on public app data paths rather than formal partner APIs. Keep those adapters conservative: avoid authenticated flows, do not reuse private session data, and treat breakage as a source-level degraded state.

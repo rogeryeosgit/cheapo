@@ -1,4 +1,5 @@
 import { createRetailerSource } from "./retailer-source";
+import { createShengSiongSource } from "./sheng-siong-source";
 import type { GrocerySource } from "../types";
 
 export const sources: GrocerySource[] = [
@@ -17,15 +18,10 @@ export const sources: GrocerySource[] = [
   createRetailerSource({
     id: "redmart",
     name: "RedMart",
-    baseUrl: "https://redmart.lazada.sg/",
-    searchUrl: (query) => `https://redmart.lazada.sg/catalog/?q=${encodeURIComponent(query)}`
+    baseUrl: "https://www.lazada.sg/",
+    searchUrl: (query) => `https://redmart.lazada.sg/catalog/?ajax=true&q=${encodeURIComponent(query)}`
   }),
-  createRetailerSource({
-    id: "sheng-siong",
-    name: "Sheng Siong",
-    baseUrl: "https://www.shengsiong.com.sg/",
-    searchUrl: (query) => `https://www.shengsiong.com.sg/search?q=${encodeURIComponent(query)}`
-  }),
+  createShengSiongSource(),
   createRetailerSource({
     id: "amazon-fresh",
     name: "Amazon Fresh Singapore",

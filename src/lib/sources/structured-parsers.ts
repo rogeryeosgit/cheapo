@@ -23,6 +23,7 @@ type OfferDraft = {
 export function parseStructuredOffers(input: StructuredParseInput): ProductOffer[] {
   if (input.sourceId === "fairprice") return parseFairPriceOffers(input);
   if (input.sourceId === "cold-storage") return parseColdStorageOffers(input);
+  if (input.sourceId === "redmart") return parseRedMartOffers(input);
   return [];
 }
 
@@ -92,6 +93,35 @@ function parseColdStorageOffers(input: StructuredParseInput): ProductOffer[] {
     .filter((offer): offer is ProductOffer => Boolean(offer));
 }
 
+function parseRedMartOffers(input: StructuredParseInput): ProductOffer[] {
+  const products = extractRedMartListItems(input.html);
+  return products
+    .map((product) => {
+      const record = asRecord(product);
+      if (stringValue(record.sellerName)?.toLowerCase() !== "redmart") return null;
+
+      const title = stringValue(record.name);
+      const price = numberValue(record.price) ?? priceFromDisplay(stringValue(record.priceShow));
+      if (!title || !price) return null;
+
+      const itemUrl = stringValue(record.itemUrl);
+      const packageSize = extractPackageSize(title);
+      const discount = stringValue(record.discount);
+
+      return buildOffer(input, {
+        sourceKey: String(record.itemId ?? record.nid ?? record.skuId ?? title),
+        title,
+        packageSize,
+        price,
+        promoText: discount,
+        availability: record.inStock === true ? "in_stock" : record.inStock === false ? "out_of_stock" : "unknown",
+        productUrl: itemUrl ? absolutizeUrl(itemUrl, input.baseUrl) : input.baseUrl,
+        imageUrl: stringValue(record.image) ?? null
+      });
+    })
+    .filter((offer): offer is ProductOffer => Boolean(offer));
+}
+
 function buildOffer(input: StructuredParseInput, draft: OfferDraft): ProductOffer {
   const unit = parseUnitPrice(draft.price, draft.packageSize);
   return {
@@ -105,11 +135,21 @@ function buildOffer(input: StructuredParseInput, draft: OfferDraft): ProductOffe
     unitLabel: unit?.unitLabel ?? null,
     promoText: draft.promoText,
     availability: draft.availability,
-    productUrl: draft.productUrl,
+    productUrl: absolutizeUrl(draft.productUrl, input.baseUrl),
     imageUrl: draft.imageUrl,
     fetchedAt: new Date().toISOString(),
     confidence: scoreOffer(input.query, draft.title)
   };
+}
+
+function extractRedMartListItems(html: string): unknown[] {
+  try {
+    const parsed = JSON.parse(html);
+    const listItems = asRecord(asRecord(parsed).mods).listItems;
+    return Array.isArray(listItems) ? listItems : [];
+  } catch {
+    return [];
+  }
 }
 
 function extractNextData(html: string): unknown | null {
@@ -206,6 +246,12 @@ function numberValue(value: unknown): number | null {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+function priceFromDisplay(value: string | null): number | null {
+  if (!value) return null;
+  const match = value.match(/\d+(?:\.\d{1,2})?/);
+  return match ? numberValue(match[0]) : null;
+}
+
 function decodeHtml(value: string): string {
   return value
     .replace(/&amp;/g, "&")
@@ -217,4 +263,12 @@ function decodeHtml(value: string): string {
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 64);
+}
+
+function absolutizeUrl(url: string, baseUrl: string): string {
+  try {
+    return new URL(url, baseUrl).toString();
+  } catch {
+    return baseUrl;
+  }
 }

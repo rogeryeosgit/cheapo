@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchGroceries } from "@/src/lib/search";
-import { isValidSingaporePostalCode, normalizeQuery } from "@/src/lib/validation";
+import { isValidQuery, isValidSingaporePostalCode, MAX_QUERY_LENGTH, normalizeQuery } from "@/src/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +9,8 @@ export async function GET(request: Request) {
   const query = normalizeQuery(url.searchParams.get("q") ?? "");
   const postalCode = url.searchParams.get("postalCode") ?? "";
 
-  if (query.length < 2) {
-    return NextResponse.json({ error: "Enter at least 2 characters for the product search." }, { status: 400 });
+  if (!isValidQuery(query)) {
+    return NextResponse.json({ error: `Enter a product search between 2 and ${MAX_QUERY_LENGTH} characters.` }, { status: 400 });
   }
 
   if (!isValidSingaporePostalCode(postalCode)) {

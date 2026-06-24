@@ -10,6 +10,7 @@ type RetailerSourceConfig = {
 };
 
 const USER_AGENT = "Cheapo Singapore grocery comparison prototype (+https://example.local)";
+const MAX_SOURCE_RESPONSE_BYTES = 2_000_000;
 
 export function createRetailerSource(config: RetailerSourceConfig): GrocerySource {
   return {
@@ -28,7 +29,7 @@ export function createRetailerSource(config: RetailerSourceConfig): GrocerySourc
       const response = await fetch(url, {
         signal: input.signal,
         headers: {
-          "accept": "text/html,application/xhtml+xml",
+          "accept": "application/json,text/html,application/xhtml+xml",
           "accept-language": "en-SG,en;q=0.9",
           "user-agent": USER_AGENT
         },
@@ -43,7 +44,16 @@ export function createRetailerSource(config: RetailerSourceConfig): GrocerySourc
         };
       }
 
-      const html = await response.text();
+      const htmlResult = await readResponseTextWithinLimit(response, MAX_SOURCE_RESPONSE_BYTES);
+      if (!htmlResult.ok) {
+        return {
+          offers: [],
+          status: "degraded",
+          message: `${config.name} response was too large to process safely.`
+        };
+      }
+
+      const html = htmlResult.text;
       const offers = parseOffersFromHtml({
         html,
         query: input.query,
@@ -59,4 +69,33 @@ export function createRetailerSource(config: RetailerSourceConfig): GrocerySourc
       };
     }
   };
+}
+
+async function readResponseTextWithinLimit(response: Response, maxBytes: number): Promise<{ ok: true; text: string } | { ok: false }> {
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) return { ok: false };
+
+  if (!response.body) {
+    const text = await response.text();
+    return new TextEncoder().encode(text).byteLength <= maxBytes ? { ok: true, text } : { ok: false };
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let totalBytes = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel();
+      return { ok: false };
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+
+  text += decoder.decode();
+  return { ok: true, text };
 }

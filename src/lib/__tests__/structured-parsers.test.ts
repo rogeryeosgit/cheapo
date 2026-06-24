@@ -140,4 +140,51 @@ describe("structured retailer parsers", () => {
     expect(offers[0].price).toBe(3.53);
     expect(offers[0].imageUrl).toBe("https://example.com/structured.jpg");
   });
+
+  it("extracts RedMart products from Lazada public ajax search data", () => {
+    const html = JSON.stringify({
+      mods: {
+        listItems: [
+          {
+            name: "Meiji Lowfat Milk 2 L",
+            itemId: "301108837",
+            sellerName: "RedMart",
+            price: "6.45",
+            priceShow: "$6.45",
+            discount: "7% Off",
+            inStock: true,
+            image: "https://example.com/redmart.jpg",
+            itemUrl: "//www.lazada.sg/products/pdp-i301108837.html"
+          },
+          {
+            name: "Farmhouse Low Fat UHT Milk 1L",
+            itemId: "3237952216",
+            sellerName: "Other Seller",
+            price: "2.61",
+            inStock: true
+          }
+        ]
+      }
+    });
+
+    const offers = parseStructuredOffers({
+      html,
+      query: "Meiji Low Fat Milk",
+      retailer: "RedMart",
+      baseUrl: "https://www.lazada.sg/",
+      sourceId: "redmart"
+    });
+
+    expect(offers).toHaveLength(1);
+    expect(offers[0]).toMatchObject({
+      retailer: "RedMart",
+      title: "Meiji Lowfat Milk 2 L",
+      packageSize: "2 L",
+      price: 6.45,
+      promoText: "7% Off",
+      availability: "in_stock",
+      productUrl: "https://www.lazada.sg/products/pdp-i301108837.html",
+      imageUrl: "https://example.com/redmart.jpg"
+    });
+  });
 });

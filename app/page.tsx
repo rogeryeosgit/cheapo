@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Clock, ExternalLink, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type { ProductOffer, SearchResponse, SourceReport } from "@/src/lib/types";
+import { MAX_QUERY_LENGTH } from "@/src/lib/validation";
 
 type FilterMode = "all" | "in_stock" | "exact";
 
@@ -25,8 +26,9 @@ export default function Home() {
     event.preventDefault();
     setError(null);
 
-    if (query.trim().length < 2) {
-      setError("Enter at least 2 characters for the product search.");
+    const normalizedQuery = query.trim().replace(/\s+/g, " ");
+    if (normalizedQuery.length < 2 || normalizedQuery.length > MAX_QUERY_LENGTH) {
+      setError(`Enter a product search between 2 and ${MAX_QUERY_LENGTH} characters.`);
       return;
     }
 
@@ -38,7 +40,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ q: query, postalCode });
+      const params = new URLSearchParams({ q: normalizedQuery, postalCode });
       const response = await fetch(`/api/search?${params.toString()}`);
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Search failed.");
@@ -76,6 +78,7 @@ export default function Home() {
                 className="min-h-12 w-full border-0 bg-transparent text-base outline-none"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                maxLength={MAX_QUERY_LENGTH}
                 placeholder="Meiji Low Fat Milk"
               />
             </div>
