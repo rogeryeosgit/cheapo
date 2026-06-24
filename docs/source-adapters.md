@@ -8,7 +8,6 @@ The adapter layer is intentionally conservative. It fetches public search pages,
 - Cold Storage: parse the server-rendered `initialProducts` payload and normalize promo price, discount label, stock, image, and product URL.
 - RedMart: use Lazada's public `ajax=true` search response and keep results scoped to `sellerName: "RedMart"`.
 - Sheng Siong: use the public Meteor DDP app method that returns product search data, with the same source timeout and error isolation as other adapters.
-- Amazon Fresh: report unsupported until an approved feed or integration is available.
 
 The structured parsers are preferred because they avoid false matches from navigation text, filters, ratings, and promotional copy.
 

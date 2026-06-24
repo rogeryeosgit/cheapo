@@ -22,11 +22,4 @@ export const sources: GrocerySource[] = [
     searchUrl: (query) => `https://redmart.lazada.sg/catalog/?ajax=true&q=${encodeURIComponent(query)}`
   }),
   createShengSiongSource(),
-  createRetailerSource({
-    id: "amazon-fresh",
-    name: "Amazon Fresh Singapore",
-    baseUrl: "https://www.amazon.sg/",
-    searchUrl: (query) => `https://www.amazon.sg/s?k=${encodeURIComponent(query)}&i=nowstore`,
-    unsupported: "Amazon pages commonly require anti-bot validation; add an approved feed or partner integration for reliable coverage."
-  })
 ];
