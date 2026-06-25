@@ -1,11 +1,32 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Clock, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useMemo, useState } from "react";
 import type { ProductOffer, SearchResponse, SourceReport } from "@/src/lib/types";
 import { MAX_QUERY_LENGTH } from "@/src/lib/validation";
 
 type FilterMode = "all" | "in_stock" | "exact";
+
+const PRODUCT_SUGGESTIONS = [
+  "Meiji Low Fat Milk",
+  "Marigold HL Milk",
+  "Farmhouse Fresh Milk",
+  "Gardenia White Bread",
+  "Sunshine Wholemeal Bread",
+  "Fresh Eggs 10s",
+  "FairPrice Jasmine Rice 5kg",
+  "Royal Umbrella Thai Hom Mali Rice 5kg",
+  "Maggi Curry Instant Noodles",
+  "Indomie Mi Goreng",
+  "Ayam Brand Tuna Chunks",
+  "Milo Powder",
+  "Nescafe Gold Coffee",
+  "Coca-Cola Original Taste",
+  "Pokka Green Tea",
+  "Banana",
+  "Chicken Breast",
+  "Salmon Fillet"
+];
 
 export default function Home() {
   const [query, setQuery] = useState("Meiji Low Fat Milk");
@@ -13,6 +34,20 @@ export default function Home() {
   const [result, setResult] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const [keyboardSelectionActive, setKeyboardSelectionActive] = useState(false);
+
+  const productSuggestions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const matches = normalizedQuery
+      ? PRODUCT_SUGGESTIONS.filter((suggestion) => suggestion.toLowerCase().includes(normalizedQuery))
+      : PRODUCT_SUGGESTIONS;
+
+    return matches.slice(0, 6);
+  }, [query]);
+
+  const shouldShowSuggestions = suggestionsOpen && productSuggestions.length > 0;
 
   const filteredOffers = useMemo(() => {
     const offers = result?.offers ?? [];
@@ -21,9 +56,50 @@ export default function Home() {
     return offers;
   }, [filter, result]);
 
+  function updateQuery(value: string) {
+    setQuery(value);
+    setSuggestionsOpen(true);
+    setActiveSuggestionIndex(0);
+    setKeyboardSelectionActive(false);
+  }
+
+  function chooseSuggestion(suggestion: string) {
+    setQuery(suggestion);
+    setSuggestionsOpen(false);
+    setActiveSuggestionIndex(0);
+    setKeyboardSelectionActive(false);
+  }
+
+  function handleQueryKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (!shouldShowSuggestions) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setKeyboardSelectionActive(true);
+      setActiveSuggestionIndex((current) => (current + 1) % productSuggestions.length);
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setKeyboardSelectionActive(true);
+      setActiveSuggestionIndex((current) => (current - 1 + productSuggestions.length) % productSuggestions.length);
+    }
+
+    if (event.key === "Enter" && keyboardSelectionActive) {
+      event.preventDefault();
+      chooseSuggestion(productSuggestions[activeSuggestionIndex]);
+    }
+
+    if (event.key === "Escape") {
+      setSuggestionsOpen(false);
+      setKeyboardSelectionActive(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuggestionsOpen(false);
 
     const normalizedQuery = query.trim().replace(/\s+/g, " ");
     if (normalizedQuery.length < 2 || normalizedQuery.length > MAX_QUERY_LENGTH) {
@@ -65,16 +141,53 @@ export default function Home() {
             <label className="block text-sm font-medium text-ink" htmlFor="query">
               Product
             </label>
-            <div className="mt-2 flex items-center gap-2 rounded-md border border-ink/15 bg-white px-3">
-              <Search aria-hidden="true" className="h-5 w-5 text-leaf" />
-              <input
-                id="query"
-                className="min-h-12 w-full border-0 bg-transparent text-base outline-none"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                maxLength={MAX_QUERY_LENGTH}
-                placeholder="Meiji Low Fat Milk"
-              />
+            <div className="relative mt-2">
+              <div className="flex items-center gap-2 rounded-md border border-ink/15 bg-white px-3">
+                <Search aria-hidden="true" className="h-5 w-5 text-leaf" />
+                <input
+                  id="query"
+                  className="min-h-12 w-full border-0 bg-transparent text-base outline-none"
+                  value={query}
+                  onBlur={() => {
+                    window.setTimeout(() => setSuggestionsOpen(false), 120);
+                  }}
+                  onChange={(event) => updateQuery(event.target.value)}
+                  onFocus={() => setSuggestionsOpen(true)}
+                  onKeyDown={handleQueryKeyDown}
+                  maxLength={MAX_QUERY_LENGTH}
+                  placeholder="Meiji Low Fat Milk"
+                  autoComplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="product-suggestions"
+                  aria-expanded={shouldShowSuggestions}
+                  aria-activedescendant={shouldShowSuggestions ? `product-suggestion-${activeSuggestionIndex}` : undefined}
+                />
+              </div>
+              {shouldShowSuggestions ? (
+                <div
+                  id="product-suggestions"
+                  role="listbox"
+                  className="mt-2 overflow-hidden rounded-md border border-ink/10 bg-white shadow-panel"
+                >
+                  {productSuggestions.map((suggestion, index) => (
+                    <button
+                      id={`product-suggestion-${index}`}
+                      key={suggestion}
+                      type="button"
+                      role="option"
+                      aria-selected={index === activeSuggestionIndex}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => chooseSuggestion(suggestion)}
+                      className={`block min-h-11 w-full px-3 text-left text-sm transition ${
+                        index === activeSuggestionIndex ? "bg-limewash text-ink" : "text-ink/75 hover:bg-limewash hover:text-ink"
+                      }`}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <button

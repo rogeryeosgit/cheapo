@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("search form validates product query", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Product" }).fill("a");
+  await page.getByRole("combobox", { name: "Product" }).fill("a");
   await page.getByRole("button", { name: "Find cheapest" }).click();
   await expect(page.getByText("Enter a product search between 2 and 120 characters.")).toBeVisible();
 });
@@ -10,6 +10,17 @@ test("search form validates product query", async ({ page }) => {
 test("search page exposes core controls", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Find the cheapest visible price before you shop." })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Product" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Product" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Find cheapest" })).toBeVisible();
+});
+
+test("product input suggests searchable groceries", async ({ page }) => {
+  await page.goto("/");
+  const productInput = page.getByRole("combobox", { name: "Product" });
+
+  await productInput.fill("rice");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await page.getByRole("option", { name: "FairPrice Jasmine Rice 5kg" }).click();
+
+  await expect(productInput).toHaveValue("FairPrice Jasmine Rice 5kg");
 });

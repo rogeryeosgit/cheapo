@@ -1,6 +1,6 @@
 # Cheapo Singapore
 
-Cheapo is a Singapore grocery price finder. Enter a product name, then compare public item prices from online grocery sources.
+Cheapo is a Singapore grocery price finder. Enter a product name, use the built-in grocery suggestions if helpful, then compare public item prices from online grocery sources.
 
 The app ranks by item price first. Delivery fees, source status, confidence, and unit-price estimates are shown separately when available.
 
